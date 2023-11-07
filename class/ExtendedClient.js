@@ -1,6 +1,8 @@
 const { Client, IntentsBitField, REST, Routes } = require("discord.js"),
     fs = require("fs")
 
+const mqtt = require("mqtt");
+
 class ExtendedClient extends Client {
     constructor(token) {
         super({
@@ -32,9 +34,22 @@ class ExtendedClient extends Client {
         this.loadCommands()
         this.setCommandHandler()
         this.loadEvents()
-        this.login(this.token).then(() => {
-            this.registerSlashCommands()
+        this.mqtt = mqtt.connect(process.env.MQTT_BROKER)
+        this.mqtt.on("connect", () => {
+            this.login(this.token).then(() => {
+                this.registerSlashCommands()
+            })    
+            console.log("[MQTT] connected ! :", this.mqtt.options.host)
         })
+
+        this.mqtt.on("disconnect", () => {
+            console.log("{MQTT} disconnected !")
+        })
+
+        this.mqtt.on("error",(e) => {
+            console.log("[MQTT] Error :", e)
+        })
+
     }
 
     setCommandHandler() {
